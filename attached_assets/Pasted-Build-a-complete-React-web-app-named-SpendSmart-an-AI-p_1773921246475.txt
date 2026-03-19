@@ -1,0 +1,232 @@
+Build a complete React web app named **"SpendSmart"** — an AI-powered expense tracker for Indian college students.
+
+Use:
+
+* Vite + React
+* Tailwind CSS
+* Recharts (charts)
+* Lucide React (icons)
+* localStorage (data)
+* Gemini 2.5 Flash API (for AI)
+
+---
+
+## 🎯 CORE FEATURES
+
+1. Add expenses (name, amount ₹, category, date)
+2. View dashboard with:
+
+   * Total spent
+   * Top category
+   * Transaction count
+3. Charts:
+
+   * Donut chart (category breakdown)
+   * Bar chart (last 7 days)
+4. Expense list:
+
+   * Delete with inline confirm
+   * Search + category filter
+5. AI Analysis (Gemini API):
+
+   * Insights
+   * Savings tips
+   * Warnings
+6. Intro screen (first visit only)
+7. "How It Works" section
+
+---
+
+## 📁 STRUCTURE
+
+Create:
+
+* App.jsx (main layout + routing via state)
+* components:
+
+  * Intro.jsx
+  * Sidebar.jsx
+  * Dashboard.jsx
+  * ExpenseModal.jsx
+  * ExpenseList.jsx
+  * AIAnalysis.jsx
+  * HowItWorks.jsx
+* hooks:
+
+  * useExpenses.js (localStorage logic)
+
+---
+
+## 💾 DATA (IMPORTANT)
+
+Store in localStorage:
+Key: "spendsmart_expenses"
+
+Expense format:
+{
+id: crypto.randomUUID(),
+name,
+amount,
+category,
+date
+}
+
+Hook should provide:
+
+* expenses
+* addExpense
+* deleteExpense
+* totalSpent
+* category breakdown
+* last 7 days data
+
+---
+
+## 🎨 UI RULES (KEEP CLEAN)
+
+* Card-based UI
+* Tailwind only
+* Rounded corners (xl or 2xl)
+* Soft shadows
+* Indigo primary color (#6366F1)
+* Minimal, modern design
+* Fully responsive
+
+Sidebar:
+
+* Left fixed
+* Items: Dashboard, Expenses, AI Analysis, How It Works
+
+Top bar:
+
+* Page title
+* "+ Add Expense" button
+
+---
+
+## 🧾 ADD EXPENSE
+
+* Open modal (NOT new page)
+* Inputs:
+
+  * Name
+  * Amount
+  * Category
+  * Date (default today)
+* Validate fields
+* On submit:
+
+  * Save to state + localStorage
+  * Close modal
+  * Show toast "Expense added"
+
+DO NOT use `<form>`
+
+---
+
+## 📊 DASHBOARD
+
+Show:
+
+* Total spent (animated)
+* Top category
+* Transaction count
+
+Charts:
+
+* Donut chart (category breakdown)
+* Bar chart (last 7 days)
+
+---
+
+## 🧾 EXPENSE LIST
+
+* Show all expenses
+* Sorted newest first
+* Delete with inline confirm (no alerts)
+* Search + filter
+* Empty state message
+
+---
+
+## 🤖 AI ANALYSIS (IMPORTANT)
+
+Use Gemini API:
+
+POST:
+https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=YOUR_API_KEY
+
+Headers:
+Content-Type: application/json
+
+Body:
+{
+"contents": [{
+"parts": [{
+"text": "Analyze this expense data and give insights, tips, and warnings:\n\nTotal: ₹X\nCategories: ...\nRecent: ..."
+}]
+}]
+}
+
+Rules:
+
+* Only enable if ≥ 3 expenses
+* Show loading state
+* Parse response into 3 sections:
+
+  * Insights
+  * Tips
+  * Warnings
+
+If API key missing:
+Show warning banner
+
+Use:
+import.meta.env.VITE_GEMINI_API_KEY
+
+---
+
+## 🌟 INTRO SCREEN
+
+* Show only first time (localStorage flag)
+* Full screen
+* App name + short description
+* "Get Started" button
+* On click → open main app
+
+---
+
+## 📖 HOW IT WORKS
+
+3 steps:
+
+1. Add expenses
+2. View charts
+3. Get AI insights
+
+* small section explaining Gemini usage
+
+---
+
+## ⚠️ IMPORTANT RULES
+
+* No HTML forms
+* No alert() or confirm()
+* No fake data
+* Use real user input
+* Use fetch() for API
+* Clean UI only
+* Keep code modular
+
+---
+
+## 🎯 FINAL OUTPUT
+
+App should:
+
+* Work without errors
+* Look modern and clean
+* Store data locally
+* Show charts correctly
+* Call Gemini API properly
+* Feel like a real student finance app
