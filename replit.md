@@ -21,7 +21,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   └── spendsmart/         # SpendSmart React app (AI expense tracker)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
@@ -90,6 +91,16 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 ### `lib/api-client-react` (`@workspace/api-client-react`)
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
+
+### `artifacts/spendsmart` (`@workspace/spendsmart`)
+
+SpendSmart — AI-powered expense tracker for Indian college students. Frontend-only React + Vite app.
+
+- All data stored in `localStorage` (key: `spendsmart_expenses`)
+- Gemini AI integration via `VITE_GEMINI_API_KEY` env secret
+- Components: Intro, Sidebar, Dashboard, ExpenseModal, ExpenseList, AIAnalysis, HowItWorks
+- Charts: Recharts (donut + bar chart)
+- Served at `/` (previewPath: `/`)
 
 ### `scripts` (`@workspace/scripts`)
 

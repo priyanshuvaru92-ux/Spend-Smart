@@ -1,0 +1,16 @@
+packages:
+  "recharts": "For rendering beautiful dashboard charts (donut and bar)"
+  "date-fns": "For formatting and manipulating expense dates"
+  "framer-motion": "For smooth page transitions and micro-interactions"
+  "clsx": "For conditional class merging"
+  "tailwind-merge": "For merging tailwind classes without conflicts"
+
+images:
+  - path: "artifacts/spendsmart/public/images/intro-bg.png"
+    description: "Abstract modern 3D gradient mesh background in soft indigo, purple and teal, suitable for a clean student finance app hero screen"
+    aspect_ratio: "16:9"
+
+notes:
+  - "App is purely frontend-driven and uses localStorage."
+  - "Requires VITE_GEMINI_API_KEY environment variable for AI features."
+  - "State-based routing is used as requested, ignoring URL paths."
