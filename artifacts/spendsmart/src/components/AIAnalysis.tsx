@@ -3,6 +3,16 @@ import { Sparkles, KeyRound, AlertCircle, TrendingDown, Lightbulb, ShieldAlert, 
 import { motion } from 'framer-motion';
 import type { Expense } from '../hooks/use-expenses';
 
+function sanitize(str: unknown): string {
+  return String(str)
+    .replace(/\\/g, '')
+    .replace(/"/g, "'")
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ')
+    .replace(/\t/g, ' ')
+    .trim();
+}
+
 interface AIAnalysisProps {
   expenses: Expense[];
 }
@@ -41,26 +51,20 @@ export function AIAnalysis({ expenses }: AIAnalysisProps) {
       categoryMap[e.category] = (categoryMap[e.category] || 0) + e.amount;
     });
     const categoryList = Object.entries(categoryMap)
-      .map(([k, v]) => `${k}: ₹${v}`)
+      .map(([k, v]) => `${sanitize(k)}: Rs.${sanitize(v)}`)
       .join(', ');
     const recent = expenses
       .slice(0, 5)
-      .map(e => `${e.name} (${e.category}) — ₹${e.amount} on ${e.date}`)
-      .join('\n');
+      .map(e => `${sanitize(e.name)} (${sanitize(e.category)}) - Rs.${sanitize(e.amount)} on ${sanitize(e.date)}`)
+      .join(' | ');
 
-    const prompt = `You are a financial advisor for Indian college students. Analyze this expense data and respond ONLY with a valid JSON object — no markdown, no explanation, no backticks.
-
-Total spent: ₹${totalSpent}
-Categories: ${categoryList}
-Recent expenses:
-${recent}
-
-Respond with exactly this JSON format:
-{
-  "insights": ["insight 1", "insight 2", "insight 3"],
-  "tips": ["tip 1", "tip 2", "tip 3"],
-  "warnings": ["warning 1", "warning 2"]
-}`;
+    const prompt =
+      'You are a financial advisor for Indian college students. Analyze this expense data and respond ONLY with a valid JSON object - no markdown, no explanation, no backticks. ' +
+      `Total spent: Rs.${sanitize(totalSpent)}. ` +
+      `Categories: ${categoryList}. ` +
+      `Recent expenses: ${recent}. ` +
+      'Respond with exactly this JSON format: ' +
+      '{"insights":["insight 1","insight 2","insight 3"],"tips":["tip 1","tip 2","tip 3"],"warnings":["warning 1","warning 2"]}';
 
     try {
       const response = await fetch(
