@@ -1,0 +1,200 @@
+Build a complete React web app named **"SpendSmart"** — an AI-powered expense tracker for Indian college students.
+
+Use:
+
+* Vite + React
+* Tailwind CSS
+* Recharts
+* Lucide React
+* localStorage
+* Google Gemini 2.0 Flash API
+
+---
+
+## 🎯 CORE FEATURES
+
+* Add expenses (name, amount ₹, category, date)
+* Dashboard with totals + charts
+* Expense list with delete
+* AI analysis using Gemini
+* Intro screen (first visit only)
+* How It Works page
+
+---
+
+## 💾 DATA (IMPORTANT)
+
+Use localStorage key: "spendsmart_expenses"
+
+Expense object:
+{
+id: crypto.randomUUID(),
+name,
+amount: Number,
+category,
+date ("YYYY-MM-DD")
+}
+
+Create a hook useExpenses that provides:
+
+* expenses
+* addExpense
+* deleteExpense
+* totalSpent
+* byCategory
+* last7Days
+* thisMonthTotal
+* topCategory
+
+---
+
+## 🎨 UI
+
+* Clean card-based UI
+* Indigo (#6366F1) as primary color
+* Sidebar (Dashboard, Expenses, AI Analysis, How It Works)
+* Top bar with "+ Add Expense"
+* Responsive design
+
+---
+
+## 🧾 ADD EXPENSE (CRITICAL FIX SECTION)
+
+Use a modal with controlled state:
+
+const [form, setForm] = useState({
+name: "",
+amount: "",
+category: "",
+date: new Date().toISOString().split("T")[0]
+});
+
+### ✅ CATEGORY (IMPORTANT)
+
+* Use controlled component
+* Either:
+
+  * Proper `<select>` with value + onChange
+    OR
+  * Custom dropdown (must update state correctly)
+
+onChange:
+e => setForm(f => ({ ...f, category: e.target.value }))
+
+### ✅ DATE (IMPORTANT)
+
+<input
+type="date"
+value={form.date}
+max={new Date().toISOString().split("T")[0]}
+onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+/>
+
+### ✅ VALIDATION
+
+Check:
+
+* name not empty
+* amount > 0
+* category selected
+* date exists
+
+### ✅ SUBMIT
+
+* Add expense
+* Reset form
+* Close modal
+* Show toast
+
+---
+
+## 📊 DASHBOARD
+
+Show:
+
+* Total spent
+* Top category
+* Transaction count
+
+Charts:
+
+* Pie chart (category breakdown)
+* Bar chart (last 7 days)
+
+---
+
+## 🧾 EXPENSE LIST
+
+* Show all expenses
+* Sort newest first
+* Delete with inline confirm
+* Search + category filter
+
+---
+
+## 🤖 AI ANALYSIS (GEMINI)
+
+Use API key:
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+
+If missing:
+Show warning banner (don’t crash)
+
+### API CALL
+
+POST:
+https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}
+
+Parse:
+data.candidates[0].content.parts[0].text
+
+### OUTPUT
+
+Split into:
+
+* Key Insights
+* Savings Tips
+* Watch Out
+
+---
+
+## 🌟 INTRO SCREEN
+
+* Show only once (localStorage "spendsmart_seen")
+* Full screen welcome UI
+* "Get Started" button → open app
+
+---
+
+## 📖 HOW IT WORKS
+
+3 steps:
+
+* Add expenses
+* View charts
+* Get AI insights
+
+---
+
+## ⚠️ IMPORTANT RULES
+
+* NO <form> tags
+* NO alert() / confirm()
+* NO hardcoded data
+* Always use controlled inputs
+* Date must always be "YYYY-MM-DD"
+* Category must update state properly
+* Use real data in charts
+
+---
+
+## 🎯 FINAL GOAL
+
+App should:
+
+* Work without bugs
+* Have clean UI
+* Store data locally
+* Show correct charts
+* Successfully call Gemini API
+* Feel like a real fintech app

@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { format, subDays, isAfter, isSameDay, parseISO } from 'date-fns';
+import { format, subDays, isSameDay, parseISO, isSameMonth } from 'date-fns';
 
-export type ExpenseCategory = 
-  | 'Food' 
-  | 'Transport' 
-  | 'Education' 
-  | 'Entertainment' 
-  | 'Shopping' 
-  | 'Health' 
+export type ExpenseCategory =
+  | 'Food'
+  | 'Transport'
+  | 'Education'
+  | 'Entertainment'
+  | 'Shopping'
+  | 'Health'
   | 'Other';
 
 export interface Expense {
@@ -15,7 +15,7 @@ export interface Expense {
   name: string;
   amount: number;
   category: ExpenseCategory;
-  date: string; // ISO string
+  date: string; // YYYY-MM-DD
 }
 
 const STORAGE_KEY = 'spendsmart_expenses';
@@ -24,20 +24,18 @@ export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         setExpenses(JSON.parse(stored));
-      } catch (e) {
-        console.error("Failed to parse expenses from localStorage");
+      } catch {
+        console.error('Failed to parse expenses from localStorage');
       }
     }
     setIsLoaded(true);
   }, []);
 
-  // Save to localStorage whenever expenses change
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
@@ -56,11 +54,19 @@ export function useExpenses() {
     setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
-  // Derived state
-  const totalSpent = useMemo(() => {
-    return expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalSpent = useMemo(
+    () => expenses.reduce((sum, e) => sum + e.amount, 0),
+    [expenses]
+  );
+
+  const thisMonthTotal = useMemo(() => {
+    const now = new Date();
+    return expenses
+      .filter(e => isSameMonth(parseISO(e.date), now))
+      .reduce((sum, e) => sum + e.amount, 0);
   }, [expenses]);
 
+  // categoryBreakdown / byCategory — both names exposed for compatibility
   const categoryBreakdown = useMemo(() => {
     const breakdown: Record<string, number> = {};
     expenses.forEach(e => {
@@ -69,30 +75,28 @@ export function useExpenses() {
     return Object.entries(breakdown).map(([name, value]) => ({ name, value }));
   }, [expenses]);
 
+  const byCategory = categoryBreakdown;
+
+  // last7DaysData / last7Days — both names exposed for compatibility
   const last7DaysData = useMemo(() => {
     const today = new Date();
-    const data = [];
-    
-    for (let i = 6; i >= 0; i--) {
-      const targetDate = subDays(today, i);
-      const dayLabel = format(targetDate, 'EEE'); // Mon, Tue, etc.
-      
-      const spentOnDay = expenses
-        .filter(e => isSameDay(parseISO(e.date), targetDate))
-        .reduce((sum, e) => sum + e.amount, 0);
-        
-      data.push({
-        name: dayLabel,
-        amount: spentOnDay
-      });
-    }
-    return data;
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = subDays(today, 6 - i);
+      return {
+        name: format(day, 'EEE'),
+        amount: expenses
+          .filter(e => isSameDay(parseISO(e.date), day))
+          .reduce((sum, e) => sum + e.amount, 0),
+      };
+    });
   }, [expenses]);
+
+  const last7Days = last7DaysData;
 
   const topCategory = useMemo(() => {
     if (categoryBreakdown.length === 0) return 'None';
-    return categoryBreakdown.reduce((prev, current) => 
-      (prev.value > current.value) ? prev : current
+    return categoryBreakdown.reduce((prev, curr) =>
+      curr.value > prev.value ? curr : prev
     ).name;
   }, [categoryBreakdown]);
 
@@ -101,9 +105,12 @@ export function useExpenses() {
     addExpense,
     deleteExpense,
     totalSpent,
+    thisMonthTotal,
     categoryBreakdown,
+    byCategory,
     last7DaysData,
+    last7Days,
     topCategory,
-    isLoaded
+    isLoaded,
   };
 }

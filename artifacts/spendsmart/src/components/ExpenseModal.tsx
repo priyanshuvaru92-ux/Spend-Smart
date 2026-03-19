@@ -9,33 +9,50 @@ interface ExpenseModalProps {
   onSave: (expense: { name: string; amount: number; category: ExpenseCategory; date: string }) => void;
 }
 
-const CATEGORIES: ExpenseCategory[] = ['Food', 'Transport', 'Education', 'Entertainment', 'Shopping', 'Health', 'Other'];
+const CATEGORIES: ExpenseCategory[] = [
+  'Food', 'Transport', 'Education', 'Entertainment', 'Shopping', 'Health', 'Other',
+];
 
-const TODAY = () => new Date().toISOString().split("T")[0];
+const TODAY = () => new Date().toISOString().split('T')[0];
+
+interface FormState {
+  name: string;
+  amount: string;
+  category: string;
+  date: string;
+}
+
+const INITIAL_FORM: FormState = {
+  name: '',
+  amount: '',
+  category: '',
+  date: TODAY(),
+};
 
 export function ExpenseModal({ isOpen, onClose, onSave }: ExpenseModalProps) {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory>('Food');
-  const [date, setDate] = useState(TODAY());
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<FormState>(INITIAL_FORM);
+  const [errors, setErrors] = useState<Partial<FormState>>({});
 
   useEffect(() => {
     if (isOpen) {
-      setName('');
-      setAmount('');
-      setCategory('Food');
-      setDate(TODAY());
+      setForm({ ...INITIAL_FORM, date: TODAY() });
       setErrors({});
     }
   }, [isOpen]);
 
-  const handleSave = () => {
-    const newErrors: Record<string, string> = {};
+  const set = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm(f => ({ ...f, [field]: e.target.value }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+  };
 
-    if (!name.trim()) newErrors.name = 'Name is required';
-    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) newErrors.amount = 'Enter a valid amount';
-    if (!date) newErrors.date = 'Date is required';
+  const handleSave = () => {
+    const newErrors: Partial<FormState> = {};
+
+    if (!form.name.trim()) newErrors.name = 'Name is required';
+    if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
+      newErrors.amount = 'Enter a valid amount greater than 0';
+    if (!form.category) newErrors.category = 'Please select a category';
+    if (!form.date) newErrors.date = 'Date is required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -43,10 +60,10 @@ export function ExpenseModal({ isOpen, onClose, onSave }: ExpenseModalProps) {
     }
 
     onSave({
-      name: name.trim(),
-      amount: Number(amount),
-      category,
-      date,
+      name: form.name.trim(),
+      amount: Number(form.amount),
+      category: form.category as ExpenseCategory,
+      date: form.date,
     });
 
     onClose();
@@ -83,14 +100,13 @@ export function ExpenseModal({ isOpen, onClose, onSave }: ExpenseModalProps) {
               <div className="p-6 space-y-5">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-1">What did you spend on?</label>
+                  <label className="block text-sm font-semibold text-foreground mb-1">
+                    What did you spend on?
+                  </label>
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
-                    }}
+                    value={form.name}
+                    onChange={set('name')}
                     placeholder="e.g., Masala Dosa at Canteen"
                     className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                   />
@@ -101,14 +117,13 @@ export function ExpenseModal({ isOpen, onClose, onSave }: ExpenseModalProps) {
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">Amount (₹)</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₹</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                      ₹
+                    </span>
                     <input
                       type="number"
-                      value={amount}
-                      onChange={(e) => {
-                        setAmount(e.target.value);
-                        if (errors.amount) setErrors(prev => ({ ...prev, amount: '' }));
-                      }}
+                      value={form.amount}
+                      onChange={set('amount')}
                       placeholder="0.00"
                       min="0"
                       className="w-full pl-9 pr-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-medium"
@@ -117,31 +132,30 @@ export function ExpenseModal({ isOpen, onClose, onSave }: ExpenseModalProps) {
                   {errors.amount && <p className="text-destructive text-xs mt-1">{errors.amount}</p>}
                 </div>
 
-                {/* Category & Date Grid */}
+                {/* Category & Date */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-1">Category</label>
                     <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+                      value={form.category}
+                      onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     >
+                      <option value="" disabled>Select…</option>
                       {CATEGORIES.map(c => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>
+                    {errors.category && <p className="text-destructive text-xs mt-1">{errors.category}</p>}
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-1">Date</label>
                     <input
                       type="date"
-                      value={date}
-                      onChange={(e) => {
-                        setDate(e.target.value);
-                        if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
-                      }}
+                      value={form.date}
                       max={TODAY()}
+                      onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
                       className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     />
                     {errors.date && <p className="text-destructive text-xs mt-1">{errors.date}</p>}

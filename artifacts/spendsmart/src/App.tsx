@@ -29,14 +29,14 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const visited = localStorage.getItem('spendsmart_visited');
+    const visited = localStorage.getItem('spendsmart_seen');
     if (!visited) {
       setHasVisited(false);
     }
   }, []);
 
   const handleStart = () => {
-    localStorage.setItem('spendsmart_visited', 'true');
+    localStorage.setItem('spendsmart_seen', 'true');
     setHasVisited(true);
   };
 
