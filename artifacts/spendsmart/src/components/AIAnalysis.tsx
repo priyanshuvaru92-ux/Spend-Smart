@@ -13,10 +13,38 @@ interface AIResult {
   warnings: string[];
 }
 
+const MODELS = [
+  { url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent', label: 'gemini-1.5-flash-latest (v1beta)' },
+  { url: 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',            label: 'gemini-1.5-flash (v1)' },
+  { url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',              label: 'gemini-pro (v1beta)' },
+];
+
+async function tryModel(url: string, apiKey: string, body: object): Promise<AIResult> {
+  const response = await fetch(`${url}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({}));
+    const msg = (errJson as any)?.error?.message || `API error (${response.status})`;
+    throw new Error(msg);
+  }
+  const data = await response.json();
+  let rawText: string = data.candidates[0].content.parts[0].text;
+  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+  const parsed = JSON.parse(rawText) as AIResult;
+  if (!Array.isArray(parsed.insights) || !Array.isArray(parsed.tips) || !Array.isArray(parsed.warnings)) {
+    throw new Error('Unexpected response format.');
+  }
+  return parsed;
+}
+
 export function AIAnalysis({ expenses }: AIAnalysisProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AIResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [usedModel, setUsedModel] = useState<string | null>(null);
 
   const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
@@ -34,6 +62,7 @@ export function AIAnalysis({ expenses }: AIAnalysisProps) {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setUsedModel(null);
 
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
     const categoryMap: Record<string, number> = {};
@@ -62,45 +91,24 @@ Respond with exactly this JSON format:
   "warnings": ["warning 1", "warning 2"]
 }`;
 
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
+    const body = { contents: [{ parts: [{ text: prompt }] }] };
+    let lastError = '';
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        const msg = (errJson as any)?.error?.message || `API error (${response.status})`;
-        throw new Error(msg);
+    for (const model of MODELS) {
+      try {
+        const parsed = await tryModel(model.url, API_KEY, body);
+        setResult(parsed);
+        setUsedModel(model.label);
+        setIsLoading(false);
+        return;
+      } catch (err: any) {
+        console.warn(`Model ${model.label} failed:`, err.message);
+        lastError = err.message || 'Unknown error';
       }
-
-      const data = await response.json();
-      let rawText: string = data.candidates[0].content.parts[0].text;
-
-      rawText = rawText
-        .replace(/```json/gi, '')
-        .replace(/```/g, '')
-        .trim();
-
-      const parsed = JSON.parse(rawText) as AIResult;
-
-      if (!Array.isArray(parsed.insights) || !Array.isArray(parsed.tips) || !Array.isArray(parsed.warnings)) {
-        throw new Error("Unexpected response format from Gemini.");
-      }
-
-      setResult(parsed);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+
+    setError(`All models failed. Last error: ${lastError}`);
+    setIsLoading(false);
   };
 
   return (
@@ -228,6 +236,12 @@ Respond with exactly this JSON format:
             </ul>
           </div>
         </motion.div>
+      )}
+
+      {usedModel && (
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Powered by <span className="font-medium">{usedModel}</span>
+        </p>
       )}
     </div>
   );
