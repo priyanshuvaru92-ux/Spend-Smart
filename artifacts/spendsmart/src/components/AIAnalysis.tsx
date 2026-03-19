@@ -3,14 +3,86 @@ import { Sparkles, KeyRound, AlertCircle, TrendingDown, Lightbulb, ShieldAlert, 
 import { motion } from 'framer-motion';
 import type { Expense } from '../hooks/use-expenses';
 
-function sanitize(str: unknown): string {
-  return String(str)
-    .replace(/\\/g, '')
-    .replace(/"/g, "'")
-    .replace(/\n/g, ' ')
-    .replace(/\r/g, ' ')
-    .replace(/\t/g, ' ')
-    .trim();
+async function analyzeWithGemini(expenses: { name: string; amount: number; category: string; date: string }[]): Promise<string> {
+  const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+  const categoryMap: Record<string, number> = {};
+  expenses.forEach(e => {
+    categoryMap[e.category] = (categoryMap[e.category] || 0) + Number(e.amount);
+  });
+  const total = Object.values(categoryMap).reduce((a, b) => a + b, 0);
+
+  const categoryLines = Object.entries(categoryMap)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amt]) => `${cat}: Rs${Math.round(amt)} (${((amt / total) * 100).toFixed(1)}%)`)
+    .join(', ');
+
+  const recent = [...expenses]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5)
+    .map(e => `${e.name.replace(/[^\w\s]/gi, '')} Rs${e.amount} ${e.category}`)
+    .join(', ');
+
+  const prompt = [
+    'You are a financial advisor for an Indian college student.',
+    'Total spent: Rs' + Math.round(total) + ' across ' + expenses.length + ' transactions.',
+    'Categories: ' + categoryLines,
+    'Recent: ' + recent,
+    'Reply in exactly this format:',
+    'KEY INSIGHTS:',
+    '- insight with numbers',
+    '- insight with numbers',
+    '- insight with numbers',
+    'SAVINGS TIPS:',
+    '- actionable tip',
+    '- actionable tip',
+    '- actionable tip',
+    'WATCH OUT FOR:',
+    '- warning with amount',
+    '- warning',
+    'Be friendly, mention rupee amounts, keep each point under 20 words.'
+  ].join(' ');
+
+  const requestBody = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 1200 }
+  };
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error((err as any)?.error?.message || 'Gemini API error');
+  }
+
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text as string;
+}
+
+function parseTextResponse(text: string): { insights: string[]; tips: string[]; warnings: string[] } {
+  const extract = (header: string, nextHeader: string | null) => {
+    const start = text.indexOf(header);
+    if (start === -1) return [];
+    const block = nextHeader
+      ? text.slice(start + header.length, text.indexOf(nextHeader, start + header.length))
+      : text.slice(start + header.length);
+    return block
+      .split('\n')
+      .map(l => l.replace(/^[-*]\s*/, '').trim())
+      .filter(l => l.length > 0);
+  };
+  return {
+    insights: extract('KEY INSIGHTS:', 'SAVINGS TIPS:'),
+    tips: extract('SAVINGS TIPS:', 'WATCH OUT FOR:'),
+    warnings: extract('WATCH OUT FOR:', null),
+  };
 }
 
 interface AIAnalysisProps {
@@ -45,55 +117,9 @@ export function AIAnalysis({ expenses }: AIAnalysisProps) {
     setError(null);
     setResult(null);
 
-    const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-    const categoryMap: Record<string, number> = {};
-    expenses.forEach(e => {
-      categoryMap[e.category] = (categoryMap[e.category] || 0) + e.amount;
-    });
-    const categoryList = Object.entries(categoryMap)
-      .map(([k, v]) => `${sanitize(k)}: Rs.${sanitize(v)}`)
-      .join(', ');
-    const recent = expenses
-      .slice(0, 5)
-      .map(e => `${sanitize(e.name)} (${sanitize(e.category)}) - Rs.${sanitize(e.amount)} on ${sanitize(e.date)}`)
-      .join(' | ');
-
-    const prompt =
-      'You are a financial advisor for Indian college students. Analyze this expense data and respond ONLY with a valid JSON object - no markdown, no explanation, no backticks. ' +
-      `Total spent: Rs.${sanitize(totalSpent)}. ` +
-      `Categories: ${categoryList}. ` +
-      `Recent expenses: ${recent}. ` +
-      'Respond with exactly this JSON format: ' +
-      '{"insights":["insight 1","insight 2","insight 3"],"tips":["tip 1","tip 2","tip 3"],"warnings":["warning 1","warning 2"]}';
-
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 1200 }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        const msg = (errJson as any)?.error?.message || `API error (${response.status})`;
-        throw new Error(msg);
-      }
-
-      const data = await response.json();
-      let rawText: string = data.candidates[0].content.parts[0].text;
-      rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-      const parsed = JSON.parse(rawText) as AIResult;
-      if (!Array.isArray(parsed.insights) || !Array.isArray(parsed.tips) || !Array.isArray(parsed.warnings)) {
-        throw new Error("Unexpected response format from Gemini.");
-      }
-
+      const rawText = await analyzeWithGemini(expenses);
+      const parsed = parseTextResponse(rawText);
       setResult(parsed);
     } catch (err: any) {
       console.error(err);
