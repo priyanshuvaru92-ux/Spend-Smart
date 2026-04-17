@@ -1,0 +1,72 @@
+Replit AI Prompt — Spend Smart App Upgrade
+I have an existing Spend Smart expense tracking app. DO NOT break or remove any existing functionality. Only ADD the following new features and update the color theme. Keep all existing UI structure intact.
+
+🎨 COLOR THEME CHANGE:
+Change the entire app color scheme to a rich Maroon/Currency-inspired palette:
+
+Primary: #800020 (deep maroon)
+Secondary: #A0522D (sienna/bronze — like old coins)
+Accent: #C5A028 (gold — like currency gold)
+Background: #1A0A0A (dark maroon-black) for dark mode, #FDF5F0 (warm cream) for light mode
+Text: #F5E6D3 (warm white) on dark, #2D0A0A (dark maroon) on light
+Cards/surfaces: #2D1010 dark or #FFF8F5 light
+Buttons: Maroon with gold hover effect
+Apply this consistently across all pages, cards, buttons, inputs, navbars, and modals.
+
+
+✨ NEW FEATURES TO ADD (don't remove existing ones):
+1. Login / Signup Interface
+
+Add a login and signup page as the entry point of the app
+Fields: Name, Email, Password
+After login, show the main dashboard with the user's name in the navbar
+Use localStorage to save session (no backend needed)
+Add a logout button in the navbar/sidebar
+
+2. Monthly Budget Goals
+
+Let users set a monthly spending limit per category (e.g. Food: ₹5000, Travel: ₹3000)
+Show a progress bar for each category showing how much of the budget is used
+Color: green → yellow → red as spending increases toward the limit
+
+3. Recurring Expenses
+
+Add a "Recurring" toggle when adding a new expense
+If toggled on, let user pick frequency: Daily / Weekly / Monthly
+These expenses auto-appear in the expense list at their set frequency
+Show a separate "Recurring Expenses" section in settings or dashboard
+
+4. Receipt Scanner
+
+Add an "Upload Receipt" button in the Add Expense form
+User uploads a photo of a receipt (image file)
+Use basic OCR or image reading to extract amount, date, and merchant name and auto-fill the form fields
+If OCR not possible, at least accept the image and attach it to the expense record
+
+5. Multi-Currency Support
+
+Add a currency selector in Settings (INR ₹, USD $, EUR €, GBP £, AED د.إ, JPY ¥)
+All expense amounts display in the selected currency symbol
+Add live exchange rate conversion using a free API (e.g. exchangerate-api.com or frankfurter.app)
+When switching currency, convert all displayed totals automatically
+
+6. Budget Alerts
+
+When a user reaches 80% of their monthly budget in any category, show a yellow warning banner
+When 100% is reached, show a red alert banner saying "Budget exceeded for [Category]!"
+Also show a small badge/icon on the category card when over budget
+
+7. Dark Mode Toggle
+
+Add a sun/moon toggle button in the navbar
+Smoothly switch between dark maroon theme and light cream theme
+Save the user's preference in localStorage so it persists on reload
+
+
+⚠️ IMPORTANT RULES:
+
+Do NOT delete or rewrite existing expense tracking, history, or chart features
+All new features should blend into the existing UI layout naturally
+Use the maroon/gold color palette everywhere — including new modals, forms, and alerts
+Make it fully responsive (mobile + desktop)
+Keep all code in the same project files — don't restructure the file system

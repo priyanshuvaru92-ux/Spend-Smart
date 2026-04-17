@@ -18,16 +18,16 @@
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
-  
+
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
-  
+
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-  
+
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
-  
+
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
@@ -46,47 +46,84 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ─── Light Mode (warm cream / maroon) ─── */
 :root {
-  --background: 226 100% 99%; /* Soft indigo tint */
-  --foreground: 224 71% 4%;
-  
-  --card: 0 0% 100%;
-  --card-foreground: 224 71% 4%;
-  --card-border: 226 30% 90%;
+  --background: 24 76% 97%;       /* #FDF5F0 warm cream */
+  --foreground: 348 64% 11%;      /* #2D0A0A dark maroon text */
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 224 71% 4%;
-  --popover-border: 226 30% 90%;
+  --card: 20 100% 98%;            /* #FFF8F5 */
+  --card-foreground: 348 64% 11%;
+  --card-border: 24 30% 88%;
 
-  /* Primary: Indigo-600 */
-  --primary: 239 84% 67%; 
-  --primary-foreground: 210 40% 98%;
+  --popover: 20 100% 98%;
+  --popover-foreground: 348 64% 11%;
+  --popover-border: 24 30% 88%;
 
-  /* Secondary: Soft Purple */
-  --secondary: 262 83% 75%;
-  --secondary-foreground: 210 40% 98%;
+  --primary: 348 100% 25%;        /* #800020 deep maroon */
+  --primary-foreground: 34 100% 97%;
 
-  --muted: 226 30% 95%;
-  --muted-foreground: 224 20% 40%;
+  --secondary: 19 56% 40%;        /* #A0522D sienna/bronze */
+  --secondary-foreground: 34 100% 97%;
 
-  --accent: 226 100% 97%;
-  --accent-foreground: 239 84% 67%;
+  --muted: 24 40% 93%;
+  --muted-foreground: 348 20% 42%;
+
+  --accent: 43 70% 46%;           /* #C5A028 gold */
+  --accent-foreground: 0 0% 5%;
 
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --border: 226 30% 90%;
-  --input: 226 30% 90%;
-  --ring: 239 84% 67%;
+  --border: 24 28% 87%;
+  --input: 24 28% 87%;
+  --ring: 348 100% 25%;
 
-  /* Chart Colors (Vibrant Student Vibe) */
-  --chart-1: 239 84% 67%; /* Indigo */
-  --chart-2: 262 83% 75%; /* Purple */
-  --chart-3: 326 100% 74%; /* Pink */
-  --chart-4: 43 100% 66%; /* Orange */
-  --chart-5: 168 84% 53%; /* Teal */
+  --chart-1: 348 100% 30%;        /* maroon */
+  --chart-2: 19 56% 44%;          /* sienna */
+  --chart-3: 43 70% 46%;          /* gold */
+  --chart-4: 30 80% 55%;          /* amber */
+  --chart-5: 354 65% 55%;         /* rose */
 
-  --radius: 1rem;
+  --radius: 0.75rem;
+}
+
+/* ─── Dark Mode (dark maroon-black) ─── */
+.dark {
+  --background: 0 44% 7%;         /* #1A0A0A */
+  --foreground: 34 67% 89%;       /* #F5E6D3 warm white */
+
+  --card: 0 47% 12%;              /* #2D1010 */
+  --card-foreground: 34 67% 89%;
+  --card-border: 0 30% 22%;
+
+  --popover: 0 47% 12%;
+  --popover-foreground: 34 67% 89%;
+  --popover-border: 0 30% 22%;
+
+  --primary: 348 85% 40%;         /* lighter maroon for dark bg */
+  --primary-foreground: 34 100% 97%;
+
+  --secondary: 19 52% 52%;
+  --secondary-foreground: 34 100% 97%;
+
+  --muted: 0 28% 18%;
+  --muted-foreground: 34 38% 62%;
+
+  --accent: 43 80% 55%;           /* brighter gold */
+  --accent-foreground: 0 0% 5%;
+
+  --destructive: 0 75% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 28% 22%;
+  --input: 0 28% 22%;
+  --ring: 348 85% 40%;
+
+  --chart-1: 348 85% 48%;
+  --chart-2: 19 60% 55%;
+  --chart-3: 43 80% 55%;
+  --chart-4: 30 75% 60%;
+  --chart-5: 354 65% 60%;
 }
 
 @layer base {
@@ -103,27 +140,22 @@
   }
 }
 
-/* Custom Scrollbar for a cleaner look */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
 
-/* Glassmorphism utilities */
+/* Glass utilities */
 .glass-panel {
-  @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-xl shadow-indigo-900/5;
+  @apply bg-card/80 backdrop-blur-xl border border-border shadow-xl;
 }
 
 .glass-card {
-  @apply bg-white/80 backdrop-blur-md border border-white/60 shadow-lg shadow-indigo-900/5 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-900/10 hover:-translate-y-1;
+  @apply bg-card/90 backdrop-blur-md border border-border shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+}
+
+/* Budget progress bar */
+.budget-bar-fill {
+  transition: width 0.6s ease;
 }

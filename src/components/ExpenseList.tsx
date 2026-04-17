@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Trash2, Calendar, Tag } from 'lucide-react';
+import { Search, Filter, Trash2, Calendar, Tag, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { Expense, ExpenseCategory } from '../hooks/use-expenses';
 
 interface ExpenseListProps {
   expenses: Expense[];
   onDelete: (id: string) => void;
+  formatAmount: (n: number) => string;
 }
 
 const CATEGORIES: ('All' | ExpenseCategory)[] = ['All', 'Food', 'Transport', 'Education', 'Entertainment', 'Shopping', 'Health', 'Other'];
 
-export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
+export function ExpenseList({ expenses, onDelete, formatAmount }: ExpenseListProps) {
   const [search, setSearch] = useState('');
   const [filterCat, setFilterCat] = useState<'All' | ExpenseCategory>('All');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -25,32 +26,30 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
 
   return (
     <div className="p-6 md:p-10 pb-24 md:pb-10 max-w-5xl mx-auto w-full">
-      {/* Search & Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-          <input 
+          <input
             type="text"
             placeholder="Search expenses..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 rounded-xl bg-card border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
           />
         </div>
         <div className="relative min-w-[200px]">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
           <select
             value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value as any)}
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all appearance-none shadow-sm"
+            onChange={e => setFilterCat(e.target.value as 'All' | ExpenseCategory)}
+            className="w-full pl-11 pr-4 py-3 rounded-xl bg-card border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all appearance-none shadow-sm"
           >
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
 
-      {/* List */}
-      <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         {filteredExpenses.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground">
             {expenses.length === 0 ? "You haven't added any expenses yet." : "No expenses match your search."}
@@ -58,7 +57,7 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
         ) : (
           <div className="divide-y divide-border">
             <AnimatePresence>
-              {filteredExpenses.map((expense) => (
+              {filteredExpenses.map(expense => (
                 <motion.div
                   key={expense.id}
                   initial={{ opacity: 0, height: 0 }}
@@ -67,14 +66,26 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
                   className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                      <Tag size={20} />
-                    </div>
+                    {expense.receiptImage ? (
+                      <img src={expense.receiptImage} alt="Receipt" className="w-12 h-12 rounded-xl object-cover border border-border flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                        <Tag size={20} />
+                      </div>
+                    )}
                     <div>
-                      <h4 className="font-bold text-foreground text-lg">{expense.name}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-foreground text-lg">{expense.name}</h4>
+                        {expense.isRecurring && (
+                          <span className="flex items-center gap-1 text-xs text-accent font-semibold bg-accent/10 px-2 py-0.5 rounded-full">
+                            <RefreshCw size={10} />
+                            {expense.frequency}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                          <span className="w-2 h-2 rounded-full bg-primary/60" />
                           {expense.category}
                         </span>
                         <span className="flex items-center gap-1">
@@ -84,33 +95,19 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0">
-                    <div className="text-xl font-bold text-foreground">
-                      ₹{expense.amount.toLocaleString('en-IN')}
-                    </div>
-                    
+                    <div className="text-xl font-bold text-foreground">{formatAmount(expense.amount)}</div>
                     {confirmingId === expense.id ? (
                       <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg">
                         <span className="text-xs font-semibold">Sure?</span>
-                        <button 
-                          onClick={() => onDelete(expense.id)}
-                          className="hover:underline font-bold text-sm"
-                        >
-                          Yes
-                        </button>
-                        <button 
-                          onClick={() => setConfirmingId(null)}
-                          className="hover:underline font-bold text-sm ml-1"
-                        >
-                          No
-                        </button>
+                        <button onClick={() => onDelete(expense.id)} className="hover:underline font-bold text-sm">Yes</button>
+                        <button onClick={() => setConfirmingId(null)} className="hover:underline font-bold text-sm ml-1">No</button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setConfirmingId(expense.id)}
                         className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                        title="Delete expense"
                       >
                         <Trash2 size={20} />
                       </button>
