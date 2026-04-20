@@ -1,30 +1,42 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export type BudgetGoals = Record<string, number>;
 
-const BUDGETS_KEY = 'spendsmart_budgets';
-
-export function useBudgets() {
+export function useBudgets(userId?: string) {
   const [budgets, setBudgetsState] = useState<BudgetGoals>({});
 
   useEffect(() => {
-    const stored = localStorage.getItem(BUDGETS_KEY);
-    if (stored) {
-      try { setBudgetsState(JSON.parse(stored)); } catch { /* ignore */ }
-    }
-  }, []);
+    if (!userId) return;
+    supabase
+      .from('budgets')
+      .select('category, amount')
+      .eq('user_id', userId)
+      .then(({ data }) => {
+        if (data) {
+          const map: BudgetGoals = {};
+          data.forEach((row) => { map[row.category] = row.amount; });
+          setBudgetsState(map);
+        }
+      });
+  }, [userId]);
 
-  const setBudget = (category: string, limit: number) => {
-    setBudgetsState(prev => {
-      const updated = { ...prev };
-      if (limit <= 0) {
+  const setBudget = async (category: string, limit: number) => {
+    if (!userId) return;
+    if (limit <= 0) {
+      await supabase.from('budgets').delete().eq('user_id', userId).eq('category', category);
+      setBudgetsState(prev => {
+        const updated = { ...prev };
         delete updated[category];
-      } else {
-        updated[category] = limit;
-      }
-      localStorage.setItem(BUDGETS_KEY, JSON.stringify(updated));
-      return updated;
-    });
+        return updated;
+      });
+    } else {
+      await supabase.from('budgets').upsert(
+        { user_id: userId, category, amount: limit },
+        { onConflict: 'user_id,category' }
+      );
+      setBudgetsState(prev => ({ ...prev, [category]: limit }));
+    }
   };
 
   return { budgets, setBudget };

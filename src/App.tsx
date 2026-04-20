@@ -42,10 +42,10 @@ export default function App() {
     totalSpent, topCategory, categoryBreakdown,
     thisMonthByCategory, last7DaysData, isLoaded: expensesLoaded,
     recurringTemplates, deleteRecurring,
-  } = useExpenses();
+  } = useExpenses(user?.id);
 
   // ── Budgets ───────────────────────────────────────────────────
-  const { budgets, setBudget } = useBudgets();
+  const { budgets, setBudget } = useBudgets(user?.id);
 
   // ── Currency ──────────────────────────────────────────────────
   const {
@@ -74,7 +74,7 @@ export default function App() {
   };
 
   // ── Loading / Auth Gates ──────────────────────────────────────
-  if (!authLoaded || !expensesLoaded) return null;
+  if (!authLoaded) return null;
 
   if (!user) {
     return (
@@ -84,6 +84,8 @@ export default function App() {
       </>
     );
   }
+
+  if (!expensesLoaded) return null;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans">

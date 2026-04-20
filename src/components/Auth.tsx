@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Wallet, Eye, EyeOff, ArrowRight, TrendingUp, Sparkles, ShieldCheck } from 'lucide-react';
 
 interface AuthProps {
-  onLogin: (email: string, password: string) => string | true;
-  onSignup: (name: string, email: string, password: string) => string | true;
+  onLogin: (email: string, password: string) => Promise<string | true>;
+  onSignup: (name: string, email: string, password: string) => Promise<string | true>;
 }
 
 export function Auth({ onLogin, onSignup }: AuthProps) {
@@ -14,23 +14,31 @@ export function Auth({ onLogin, onSignup }: AuthProps) {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('');
+    setInfo('');
     setLoading(true);
-    setTimeout(() => {
-      const result = mode === 'login'
-        ? onLogin(email, password)
-        : onSignup(name, email, password);
-      if (result !== true) setError(result as string);
-      setLoading(false);
-    }, 300);
+    const result = mode === 'login'
+      ? await onLogin(email, password)
+      : await onSignup(name, email, password);
+    if (result !== true) {
+      const msg = result as string;
+      if (msg.toLowerCase().includes('check your email') || msg.toLowerCase().includes('confirm')) {
+        setInfo(msg);
+      } else {
+        setError(msg);
+      }
+    }
+    setLoading(false);
   };
 
   const switchMode = (m: 'login' | 'signup') => {
     setMode(m);
     setError('');
+    setInfo('');
     setName(''); setEmail(''); setPassword('');
   };
 
@@ -163,6 +171,14 @@ export function Auth({ onLogin, onSignup }: AuthProps) {
                   className="text-destructive text-sm font-medium bg-destructive/10 px-4 py-2 rounded-lg"
                 >
                   {error}
+                </motion.p>
+              )}
+              {info && (
+                <motion.p
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="text-blue-700 dark:text-blue-300 text-sm font-medium bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg"
+                >
+                  {info}
                 </motion.p>
               )}
 
