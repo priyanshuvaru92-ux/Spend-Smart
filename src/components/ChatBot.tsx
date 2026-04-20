@@ -16,36 +16,94 @@ interface ChatBotProps {
   userName: string;
 }
 
+function buildExpenseContext(expenses: Expense[], budgets: BudgetGoals): string {
+  if (expenses.length === 0) return 'No expenses recorded yet.';
+
+  // Total and category breakdown
+  const categoryTotals: Record<string, number> = {};
+  const monthlyTotals: Record<string, number> = {};
+  expenses.forEach(e => {
+    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+    const month = e.date.slice(0, 7); // YYYY-MM
+    monthlyTotals[month] = (monthlyTotals[month] || 0) + e.amount;
+  });
+
+  const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+  const categoryLines = Object.entries(categoryTotals)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amt]) => `${cat}: Rs${Math.round(amt)}`)
+    .join(', ');
+
+  const monthLines = Object.entries(monthlyTotals)
+    .sort()
+    .slice(-3)
+    .map(([m, amt]) => `${m}: Rs${Math.round(amt)}`)
+    .join(', ');
+
+  // Last 20 expenses (most recent)
+  const recent = [...expenses]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 20)
+    .map(e => `${e.date} | ${e.category} | ${e.name} | Rs${e.amount}`)
+    .join('\n');
+
+  const budgetLines = Object.entries(budgets).length > 0
+    ? Object.entries(budgets).map(([cat, limit]) => {
+        const spent = categoryTotals[cat] || 0;
+        return `${cat}: spent Rs${Math.round(spent)} of Rs${limit} limit`;
+      }).join(', ')
+    : 'No budgets set.';
+
+  return [
+    `Total expenses: ${expenses.length} transactions, Rs${Math.round(total)} total.`,
+    `Category breakdown: ${categoryLines}.`,
+    `Monthly totals (recent): ${monthLines}.`,
+    `Budget goals: ${budgetLines}.`,
+    `Recent transactions:\n${recent}`,
+  ].join('\n');
+}
+
 async function askGemini(userMessage: string, expenses: Expense[], budgets: BudgetGoals): Promise<string> {
   const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-  if (!key) return "Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment.";
+  if (!key) return "API key not found. Please make sure VITE_GEMINI_API_KEY is set in your environment secrets.";
+
+  const context = buildExpenseContext(expenses, budgets);
+  const today = new Date().toISOString().split('T')[0];
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `You are a smart personal finance assistant for the Spend Smart app. Be concise, friendly, and helpful. Format responses clearly but avoid excessive markdown.
+            text: `You are a smart personal finance assistant for the Spend Smart app. Be concise, friendly, and helpful. Avoid excessive markdown symbols. Use plain text or simple bullet points.
 
-Here is the user's expense data: ${JSON.stringify(expenses)}
-Here is the user's monthly budget goals: ${JSON.stringify(budgets)}
+Today's date: ${today}
 
-Today's date is: ${new Date().toISOString().split('T')[0]}
+USER'S FINANCIAL DATA:
+${context}
 
-Answer this question helpfully and concisely: ${userMessage}`
+USER'S QUESTION: ${userMessage}`
           }]
         }],
-        generationConfig: { temperature: 0.7 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
       })
     }
   );
 
-  if (!response.ok) throw new Error(`API error ${response.status}`);
+  if (!response.ok) {
+    const errText = await response.text().catch(() => response.status.toString());
+    throw new Error(`Gemini API returned ${response.status}: ${errText}`);
+  }
+
   const data = await response.json();
-  return data.candidates[0].content.parts[0].text as string;
+
+  // Surface any API-level error
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "I didn't get a response. Please try again.";
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -91,11 +149,12 @@ export function ChatBot({ expenses, budgets, userName }: ChatBotProps) {
     try {
       const reply = await askGemini(trimmed, expenses, budgets);
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'ai', text: reply }]);
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'ai',
-        text: "Sorry, I couldn't reach Gemini right now. Please try again in a moment.",
+        text: `⚠️ Error: ${msg}`,
       }]);
     } finally {
       setIsTyping(false);
