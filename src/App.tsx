@@ -20,7 +20,7 @@ export default function App() {
   const { toast } = useToast();
 
   // ── Auth ──────────────────────────────────────────────────────
-  const { user, isLoaded: authLoaded, login, signup, logout } = useAuth();
+  const { user, isLoaded: authLoaded, login, signup, logout, loginWithGoogle } = useAuth();
 
   // ── Dark Mode ─────────────────────────────────────────────────
   const [isDark, setIsDark] = useState(() => localStorage.getItem('spendsmart_dark') === 'true');
@@ -79,7 +79,7 @@ export default function App() {
   if (!user) {
     return (
       <>
-        <Auth onLogin={login} onSignup={signup} />
+        <Auth onLogin={login} onSignup={signup} onGoogleLogin={loginWithGoogle} />
         <Toaster />
       </>
     );

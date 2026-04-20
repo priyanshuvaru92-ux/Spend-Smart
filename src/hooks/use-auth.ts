@@ -62,10 +62,19 @@ export function useAuth() {
     return true;
   };
 
+  const loginWithGoogle = async (): Promise<string | true> => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) return error.message;
+    return true;
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
-  return { user, isLoaded, login, signup, logout };
+  return { user, isLoaded, login, signup, logout, loginWithGoogle };
 }
