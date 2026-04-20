@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Loader2, RefreshCw } from 'lucide-react';
+import { X, Receipt, Loader2, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { ExpenseCategory } from '../hooks/use-expenses';
 
 interface ExpenseModalProps {
@@ -22,6 +22,19 @@ interface ExpenseModalProps {
 const CATEGORIES: ExpenseCategory[] = ['Food', 'Transport', 'Education', 'Entertainment', 'Shopping', 'Health', 'Other'];
 const TODAY = () => new Date().toISOString().split('T')[0];
 
+// Map Gemini category labels to app categories
+const GEMINI_CATEGORY_MAP: Record<string, ExpenseCategory> = {
+  food: 'Food',
+  travel: 'Transport',
+  transport: 'Transport',
+  shopping: 'Shopping',
+  bills: 'Other',
+  health: 'Health',
+  education: 'Education',
+  entertainment: 'Entertainment',
+  other: 'Other',
+};
+
 interface FormState {
   name: string;
   amount: string;
@@ -37,42 +50,75 @@ const INITIAL_FORM: FormState = {
   isRecurring: false, frequency: 'Monthly', receiptImage: '',
 };
 
-async function extractReceiptWithGemini(base64: string, mimeType: string): Promise<{ name?: string; amount?: string; date?: string } | null> {
-  const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-  if (!key) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: 'Look at this receipt image. Extract: total amount (number only, no currency symbol), date (YYYY-MM-DD format), and merchant or item name. Reply ONLY with valid JSON, no markdown: {"amount":"123.45","date":"2024-01-15","name":"Store Name"}. If a field is not found use empty string.' },
-              { inlineData: { mimeType, data: base64 } }
-            ]
-          }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 200 }
-        })
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    let text: string = data.candidates[0].content.parts[0].text;
-    text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-    return JSON.parse(text);
-  } catch { return null; }
+interface ScanResult {
+  amount: number | null;
+  date: string | null;
+  merchant: string | null;
+  category: string | null;
 }
+
+async function scanReceiptWithGemini(imageFile: File): Promise<ScanResult> {
+  const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+  if (!key) throw new Error('No API key');
+
+  const base64Data = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(imageFile);
+  });
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            {
+              inline_data: {
+                mime_type: imageFile.type,
+                data: base64Data,
+              }
+            },
+            {
+              text: `This is a receipt image. Extract details and reply ONLY in pure JSON with no markdown, no backticks, no extra text:
+{
+  "amount": number or null,
+  "date": "YYYY-MM-DD" or null,
+  "merchant": "store name" or null,
+  "category": "Food/Travel/Shopping/Bills/Health/Other"
+}`
+            }
+          ]
+        }],
+        generationConfig: { temperature: 0.1 }
+      })
+    }
+  );
+
+  if (!response.ok) throw new Error(`API error ${response.status}`);
+  const data = await response.json();
+  const rawText: string = data.candidates[0].content.parts[0].text;
+  const cleaned = rawText.replace(/```json|```/g, '').trim();
+  return JSON.parse(cleaned) as ScanResult;
+}
+
+type ScanStatus = 'idle' | 'scanning' | 'success' | 'error';
 
 export function ExpenseModal({ isOpen, onClose, onSave, currencySymbol, convertToINR }: ExpenseModalProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
-  const [ocrLoading, setOcrLoading] = useState(false);
+  const [scanStatus, setScanStatus] = useState<ScanStatus>('idle');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) { setForm({ ...INITIAL_FORM, date: TODAY() }); setErrors({}); }
+    if (isOpen) {
+      setForm({ ...INITIAL_FORM, date: TODAY() });
+      setErrors({});
+      setScanStatus('idle');
+    }
   }, [isOpen]);
 
   const set = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -84,26 +130,34 @@ export function ExpenseModal({ isOpen, onClose, onSave, currencySymbol, convertT
   const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUrl = ev.target?.result as string;
-      const base64 = dataUrl.split(',')[1];
-      setForm(f => ({ ...f, receiptImage: dataUrl }));
 
-      setOcrLoading(true);
-      const extracted = await extractReceiptWithGemini(base64, file.type);
-      setOcrLoading(false);
-      if (extracted) {
-        setForm(f => ({
-          ...f,
-          receiptImage: dataUrl,
-          name: extracted.name || f.name,
-          amount: extracted.amount || f.amount,
-          date: extracted.date || f.date,
-        }));
-      }
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setForm(f => ({ ...f, receiptImage: ev.target?.result as string }));
     };
     reader.readAsDataURL(file);
+
+    setScanStatus('scanning');
+    try {
+      const result = await scanReceiptWithGemini(file);
+      setForm(f => ({
+        ...f,
+        amount: result.amount != null ? String(result.amount) : f.amount,
+        date: result.date || f.date,
+        name: result.merchant || f.name,
+        category: result.category
+          ? (GEMINI_CATEGORY_MAP[result.category.toLowerCase()] ?? f.category)
+          : f.category,
+      }));
+      setScanStatus('success');
+    } catch {
+      setScanStatus('error');
+    }
+    // reset file input so re-uploading same file works
+    if (fileRef.current) fileRef.current.value = '';
+    URL.revokeObjectURL(previewUrl);
   };
 
   const handleSave = () => {
@@ -155,25 +209,60 @@ export function ExpenseModal({ isOpen, onClose, onSave, currencySymbol, convertT
 
               <div className="p-6 space-y-5">
 
-                {/* Receipt Upload */}
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">Receipt Scanner</label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      disabled={ocrLoading}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-accent/60 text-accent font-semibold text-sm hover:bg-accent/10 transition-colors disabled:opacity-50"
-                    >
-                      {ocrLoading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-                      {ocrLoading ? 'Scanning…' : 'Upload Receipt'}
-                    </button>
+                {/* Receipt Scanner */}
+                <div className="bg-muted/30 rounded-2xl p-4 border border-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Receipt size={16} className="text-accent" />
+                      Receipt Scanner
+                    </label>
                     {form.receiptImage && (
-                      <img src={form.receiptImage} alt="Receipt" className="w-12 h-12 object-cover rounded-lg border border-border" />
+                      <img src={form.receiptImage} alt="Receipt preview" className="w-12 h-12 object-cover rounded-xl border border-border shadow-sm" />
                     )}
-                    {ocrLoading && <span className="text-xs text-muted-foreground">AI extracting details…</span>}
                   </div>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleReceiptUpload} />
-                  <p className="text-xs text-muted-foreground mt-1">AI will auto-fill fields from your receipt photo.</p>
+
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={scanStatus === 'scanning'}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 text-primary font-semibold text-sm hover:bg-primary/10 hover:border-primary/70 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {scanStatus === 'scanning' ? (
+                      <><Loader2 size={16} className="animate-spin" /> 🔍 Scanning receipt with Gemini AI...</>
+                    ) : (
+                      <><Receipt size={16} /> 🧾 Upload Receipt</>
+                    )}
+                  </button>
+
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpg,image/jpeg,image/png,image/webp,application/pdf"
+                    className="hidden"
+                    onChange={handleReceiptUpload}
+                  />
+
+                  {/* Feedback messages */}
+                  {scanStatus === 'success' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 text-sm font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-3 py-2 rounded-lg"
+                    >
+                      <CheckCircle2 size={15} className="flex-shrink-0" />
+                      ✅ Receipt scanned! Please verify the details.
+                    </motion.div>
+                  )}
+                  {scanStatus === 'error' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 text-sm font-medium text-yellow-800 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 px-3 py-2 rounded-lg"
+                    >
+                      <AlertTriangle size={15} className="flex-shrink-0" />
+                      ⚠️ Could not read receipt. Please fill manually.
+                    </motion.div>
+                  )}
+                  {scanStatus === 'idle' && (
+                    <p className="text-xs text-muted-foreground">Supports JPG, PNG, WEBP, PDF. Gemini AI extracts amount, date, merchant & category.</p>
+                  )}
                 </div>
 
                 {/* Name */}
