@@ -10,6 +10,7 @@ import { AIAnalysis } from "./components/AIAnalysis";
 import { HowItWorks } from "./components/HowItWorks";
 import { Settings } from "./components/Settings";
 import { Auth } from "./components/Auth";
+import { ChatBot } from "./components/ChatBot";
 import { useExpenses } from "./hooks/use-expenses";
 import { useAuth } from "./hooks/use-auth";
 import { useBudgets } from "./hooks/use-budgets";
@@ -162,6 +163,9 @@ export default function App() {
         currencySymbol={currencyInfo.symbol}
         convertToINR={convertToINR}
       />
+
+      {/* AI Finance Chatbot — floats over all views */}
+      <ChatBot expenses={expenses} budgets={budgets} userName={user.name} />
 
       <Toaster />
     </div>

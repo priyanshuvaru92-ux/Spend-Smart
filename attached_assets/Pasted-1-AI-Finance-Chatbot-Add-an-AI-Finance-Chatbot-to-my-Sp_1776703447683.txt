@@ -1,0 +1,60 @@
+1. AI Finance Chatbot
+
+Add an AI Finance Chatbot to my Spend Smart app using Gemini 2.5 Flash API. Follow these rules strictly:
+Where to add it:
+
+Add a chat bubble button (bottom-right corner of the screen, always visible)
+Clicking it opens a chat panel sliding up from the bottom (like WhatsApp)
+Do NOT add it to any settings or options section
+It should float over the existing UI without disturbing any page layout
+
+What it needs:
+
+A floating round button at bottom-right with a chat icon
+A chat panel with message bubbles (user = right side, AI = left side)
+An input box at the bottom with a send button
+Show a typing indicator (3 dots animation) while Gemini is thinking
+A close button to hide the panel
+
+What the chatbot knows:
+
+Fetch the user's expense data from Supabase before every message
+Pass the expense data as context to Gemini so it can answer real questions
+It should answer questions like:
+
+"How much did I spend on food this month?"
+"What was my biggest expense last week?"
+"Am I over my budget for travel?"
+"How much did I spend in total in March?"
+"Give me tips to save money based on my spending"
+
+
+
+Gemini API call to use:
+javascriptconst response = await fetch(
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: `You are a smart personal finance assistant for the Spend Smart app.
+Here is the user's expense data: ${JSON.stringify(expenseData)}
+Here is the user's budget data: ${JSON.stringify(budgetData)}
+Answer this question helpfully and concisely: ${userMessage}`
+        }]
+      }],
+      generationConfig: { temperature: 0.7 }
+    })
+  }
+);
+const data = await response.json();
+const reply = data.candidates[0].content.parts[0].text;
+Style:
+
+Match the existing maroon and gold color theme
+Chat bubble button = maroon with gold icon
+User messages = maroon bubbles, AI messages = dark card bubbles
+Works on both mobile and desktop
+Do NOT change any existing page or feature
