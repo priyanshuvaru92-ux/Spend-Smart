@@ -285,31 +285,30 @@ export function ChatBot({ expenses, budgets, userName }: ChatBotProps) {
       </AnimatePresence>
 
       {/* Floating Button */}
-      <motion.button
+      <button
         onClick={() => setIsOpen(v => !v)}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.94 }}
-        className="fixed bottom-6 right-4 sm:right-6 z-50 w-14 h-14 rounded-full bg-primary shadow-xl shadow-primary/40 flex items-center justify-center text-primary-foreground"
-        aria-label="Open AI Finance Chat"
+        className={`fixed bottom-20 sm:bottom-7 right-4 sm:right-6 z-50 w-14 h-14 rounded-full bg-primary shadow-xl shadow-primary/40 flex items-center justify-center text-primary-foreground btn-press ${isOpen ? '' : 'chatbot-float'}`}
+        aria-label={isOpen ? 'Close AI Finance Chat' : 'Open AI Finance Chat'}
       >
+        {!isOpen && <span className="chatbot-ping" />}
         <AnimatePresence mode="wait" initial={false}>
           {isOpen ? (
-            <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+            <motion.span key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }} className="relative z-10">
               <X size={24} />
             </motion.span>
           ) : (
-            <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+            <motion.span key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }} className="relative z-10">
               <MessageCircle size={24} />
             </motion.span>
           )}
         </AnimatePresence>
         {/* Unread indicator pulse */}
         {!isOpen && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-card">
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-card z-20">
             <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75" />
           </span>
         )}
-      </motion.button>
+      </button>
     </>
   );
 }

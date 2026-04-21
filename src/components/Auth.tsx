@@ -73,9 +73,15 @@ export function Auth({ onLogin, onSignup, onGoogleLogin }: AuthProps) {
           <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-8 mx-auto shadow-2xl">
             <Wallet size={40} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-center">SpendSmart</h1>
-          <p className="text-primary-foreground/80 text-center text-lg max-w-sm mx-auto mb-12">
-            The smart expense tracker for Indian college students — powered by AI.
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-3 text-center">SpendSmart</h1>
+          <p className="text-primary-foreground/95 text-center text-xl max-w-sm mx-auto mb-2 italic font-light">
+            Take control of every rupee.
+          </p>
+          <p className="text-primary-foreground/80 text-center text-base max-w-sm mx-auto mb-10 italic font-light">
+            Spend smarter, live better.
+          </p>
+          <p className="text-primary-foreground/70 text-center text-sm max-w-sm mx-auto mb-10">
+            Track expenses, set budgets, and grow your savings — all in one place.
           </p>
           <div className="space-y-4 max-w-sm mx-auto">
             {[
@@ -156,7 +162,7 @@ export function Auth({ onLogin, onSignup, onGoogleLogin }: AuthProps) {
                 <p className="text-muted-foreground text-sm mt-1">
                   {mode === 'login'
                     ? 'Log in to see your spending dashboard.'
-                    : 'Join thousands of students managing money smarter.'}
+                    : 'Start managing your money smarter today.'}
                 </p>
               </div>
 

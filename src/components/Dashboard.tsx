@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import type { Expense } from '../hooks/use-expenses';
 import type { BudgetGoals } from '../hooks/use-budgets';
+import { getCategoryConfig } from '../lib/categories';
 
 interface DashboardProps {
   expenses: Expense[];
@@ -20,21 +21,18 @@ interface DashboardProps {
   formatAmount: (n: number) => string;
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))', 'hsl(var(--chart-5))', '#94a3b8', '#cbd5e1'
-];
-
 function BudgetProgressBar({ category, spent, limit, formatAmount }: {
   category: string; spent: number; limit: number; formatAmount: (n: number) => string;
 }) {
   const pct = Math.min((spent / limit) * 100, 100);
   const barColor = pct >= 100 ? 'bg-red-500' : pct >= 80 ? 'bg-yellow-500' : 'bg-green-500';
+  const cfg = getCategoryConfig(category);
 
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
         <span className="font-medium text-foreground flex items-center gap-1.5">
+          <span aria-hidden="true">{cfg.icon}</span>
           {category}
           {pct >= 100 && <AlertCircle size={14} className="text-red-500" />}
           {pct >= 80 && pct < 100 && <AlertTriangle size={14} className="text-yellow-500" />}
@@ -176,25 +174,34 @@ export function Dashboard({
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={categoryBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {categoryBreakdown.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Pie data={categoryBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" isAnimationActive animationDuration={800}>
+                  {categoryBreakdown.map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={getCategoryConfig(entry.name).color} />
                   ))}
                 </Pie>
                 <RechartsTooltip
-                  formatter={(value: number) => formatAmount(value)}
+                  formatter={(value: number, _name, item) => {
+                    const catName = (item?.payload?.name as string) || '';
+                    const totalAll = categoryBreakdown.reduce((s, c) => s + c.value, 0);
+                    const pct = totalAll > 0 ? Math.round((value / totalAll) * 100) : 0;
+                    const ic = getCategoryConfig(catName).icon;
+                    return [`${formatAmount(value)} (${pct}%)`, `${ic} ${catName}`];
+                  }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.15)', background: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))' }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="flex flex-wrap justify-center gap-4 mt-4">
-            {categoryBreakdown.map((entry, index) => (
-              <div key={entry.name} className="flex items-center gap-2 text-sm text-foreground">
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                <span>{entry.name}</span>
-              </div>
-            ))}
+            {categoryBreakdown.map((entry) => {
+              const cfg = getCategoryConfig(entry.name);
+              return (
+                <div key={entry.name} className="flex items-center gap-2 text-sm text-foreground">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
+                  <span>{cfg.icon} {entry.name}</span>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -214,7 +221,7 @@ export function Dashboard({
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.15)', background: 'hsl(var(--card))', color: 'hsl(var(--card-foreground))' }}
                   formatter={(value: number) => [formatAmount(value), 'Spent']}
                 />
-                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[6, 6, 6, 6]} barSize={40} />
+                <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[6, 6, 6, 6]} barSize={40} isAnimationActive animationDuration={800} />
               </BarChart>
             </ResponsiveContainer>
           </div>

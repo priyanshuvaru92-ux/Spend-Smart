@@ -174,6 +174,14 @@ export function useExpenses(userId?: string) {
     setRecurringTemplates(prev => prev.filter(t => t.id !== id));
   };
 
+  const clearAll = async () => {
+    if (!userId) return;
+    await supabase.from('expenses').delete().eq('user_id', userId);
+    await supabase.from('recurring_templates').delete().eq('user_id', userId);
+    setExpenses([]);
+    setRecurringTemplates([]);
+  };
+
   const totalSpent = useMemo(() => expenses.reduce((sum, e) => sum + e.amount, 0), [expenses]);
 
   const thisMonthTotal = useMemo(() => {
@@ -222,5 +230,6 @@ export function useExpenses(userId?: string) {
     byCategory, thisMonthByCategory, last7DaysData, last7Days,
     topCategory, isLoaded,
     recurringTemplates, deleteRecurring,
+    clearAll,
   };
 }

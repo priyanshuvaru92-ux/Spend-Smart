@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Receipt, Loader2, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { ExpenseCategory } from '../hooks/use-expenses';
+import { CATEGORY_CONFIG } from '../lib/categories';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -304,7 +305,11 @@ export function ExpenseModal({ isOpen, onClose, onSave, currencySymbol, convertT
                       className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
                     >
                       <option value="" disabled>Select…</option>
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {CATEGORIES.map(c => (
+                        <option key={c} value={c}>
+                          {CATEGORY_CONFIG[c]?.icon ?? '📦'} {c}
+                        </option>
+                      ))}
                     </select>
                     {errors.category && <p className="text-destructive text-xs mt-1">{errors.category}</p>}
                   </div>

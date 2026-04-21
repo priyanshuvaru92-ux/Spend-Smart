@@ -39,5 +39,11 @@ export function useBudgets(userId?: string) {
     }
   };
 
-  return { budgets, setBudget };
+  const clearAllBudgets = async () => {
+    if (!userId) return;
+    await supabase.from('budgets').delete().eq('user_id', userId);
+    setBudgetsState({});
+  };
+
+  return { budgets, setBudget, clearAllBudgets };
 }

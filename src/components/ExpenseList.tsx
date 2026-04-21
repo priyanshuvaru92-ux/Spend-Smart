@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Trash2, Calendar, Tag, RefreshCw } from 'lucide-react';
+import { Search, Filter, Trash2, Calendar, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { Expense, ExpenseCategory } from '../hooks/use-expenses';
+import { getCategoryConfig } from '../lib/categories';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -68,11 +69,18 @@ export function ExpenseList({ expenses, onDelete, formatAmount }: ExpenseListPro
                   <div className="flex items-start gap-4">
                     {expense.receiptImage ? (
                       <img src={expense.receiptImage} alt="Receipt" className="w-12 h-12 rounded-xl object-cover border border-border flex-shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                        <Tag size={20} />
-                      </div>
-                    )}
+                    ) : (() => {
+                      const cfg = getCategoryConfig(expense.category);
+                      return (
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm"
+                          style={{ backgroundColor: `${cfg.color}1F`, border: `1px solid ${cfg.color}33` }}
+                          aria-hidden="true"
+                        >
+                          {cfg.icon}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-foreground text-lg">{expense.name}</h4>
@@ -85,7 +93,10 @@ export function ExpenseList({ expenses, onDelete, formatAmount }: ExpenseListPro
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-primary/60" />
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: getCategoryConfig(expense.category).color }}
+                          />
                           {expense.category}
                         </span>
                         <span className="flex items-center gap-1">

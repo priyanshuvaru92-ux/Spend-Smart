@@ -41,11 +41,16 @@ export default function App() {
     expenses, addExpense, deleteExpense,
     totalSpent, topCategory, categoryBreakdown,
     thisMonthByCategory, last7DaysData, isLoaded: expensesLoaded,
-    recurringTemplates, deleteRecurring,
+    recurringTemplates, deleteRecurring, clearAll,
   } = useExpenses(user?.id);
 
   // ── Budgets ───────────────────────────────────────────────────
-  const { budgets, setBudget } = useBudgets(user?.id);
+  const { budgets, setBudget, clearAllBudgets } = useBudgets(user?.id);
+
+  const handleClearAllData = async () => {
+    await Promise.all([clearAll(), clearAllBudgets()]);
+    toast({ title: "Cleared", description: "All your data has been deleted." });
+  };
 
   // ── Currency ──────────────────────────────────────────────────
   const {
@@ -139,6 +144,7 @@ export default function App() {
           )}
           {currentView === 'settings' && (
             <Settings
+              user={user}
               currency={currency}
               currencies={CURRENCIES}
               onCurrencyChange={changeCurrency}
@@ -149,6 +155,10 @@ export default function App() {
               isDark={isDark}
               onToggleDark={toggleDark}
               currencySymbol={currencyInfo.symbol}
+              expenses={expenses}
+              thisMonthByCategory={thisMonthByCategory}
+              onClearAllData={handleClearAllData}
+              onLogout={handleLogout}
             />
           )}
         </main>
