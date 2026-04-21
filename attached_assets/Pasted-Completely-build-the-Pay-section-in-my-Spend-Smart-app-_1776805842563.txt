@@ -1,0 +1,249 @@
+Completely build the Pay section in my Spend Smart app from scratch. This is a dedicated page in the main navigation. DO NOT touch any other existing feature or page.
+
+Add "Pay" to main navigation:
+
+Add ⚡ Pay as a main nav item in sidebar and bottom nav bar
+It is a fully separate page — not inside Settings, Expenses or any other section
+
+
+Page Layout — Top to Bottom:
+1. Quick Balance Bar at top:
+
+Two cards side by side:
+
+Total Budget Remaining This Month (gold number)
+Total Spent Today (maroon number)
+
+
+Tapping either navigates to dashboard
+
+2. Pay Categories — Grouped Grid:
+Define this single config and use it everywhere:
+javascriptconst PAY_CATEGORIES = [
+
+  // Food & Drinks
+  { id: 'restaurant',  label: 'Restaurant',      icon: '🍽️', expenseCategory: 'Food',          color: '#E74C3C', desc: 'Dine in, take away',          group: 'Food & Drinks' },
+  { id: 'swiggy',      label: 'Swiggy / Zomato', icon: '🛵', expenseCategory: 'Food',          color: '#E74C3C', desc: 'Food delivery',                group: 'Food & Drinks' },
+  { id: 'cafe',        label: 'Cafe / Chai',     icon: '☕', expenseCategory: 'Food',          color: '#E74C3C', desc: 'Coffee, tea, snacks',          group: 'Food & Drinks' },
+  { id: 'grocery',     label: 'Groceries',       icon: '🛒', expenseCategory: 'Groceries',     color: '#27AE60', desc: 'Supermarket, kirana',          group: 'Food & Drinks' },
+
+  // Housing & Utilities
+  { id: 'rent',        label: 'Rent / PG',       icon: '🏠', expenseCategory: 'Rent',          color: '#8E44AD', desc: 'Monthly rent, PG fees',        group: 'Housing & Utilities' },
+  { id: 'electricity', label: 'Electricity',     icon: '⚡', expenseCategory: 'Bills',         color: '#F39C12', desc: 'Light bill, BESCOM, MSEDCL',   group: 'Housing & Utilities' },
+  { id: 'wifi',        label: 'WiFi / Internet', icon: '📶', expenseCategory: 'Bills',         color: '#F39C12', desc: 'Broadband, Jio Fiber',         group: 'Housing & Utilities' },
+  { id: 'gas',         label: 'Gas / LPG',       icon: '🔥', expenseCategory: 'Bills',         color: '#F39C12', desc: 'Cylinder, piped gas',          group: 'Housing & Utilities' },
+  { id: 'water',       label: 'Water Bill',      icon: '💧', expenseCategory: 'Bills',         color: '#F39C12', desc: 'Municipal water bill',         group: 'Housing & Utilities' },
+
+  // EMI & Finance
+  { id: 'emi',         label: 'EMI',             icon: '🏦', expenseCategory: 'Bills',         color: '#2980B9', desc: 'Loan, home, car EMI',          group: 'EMI & Finance' },
+  { id: 'creditcard',  label: 'Credit Card',     icon: '💳', expenseCategory: 'Bills',         color: '#2980B9', desc: 'Monthly card payment',         group: 'EMI & Finance' },
+  { id: 'insurance',   label: 'Insurance',       icon: '🛡️', expenseCategory: 'Bills',         color: '#2980B9', desc: 'Health, car, life',            group: 'EMI & Finance' },
+
+  // Entertainment
+  { id: 'movies',      label: 'Movie Ticket',    icon: '🎬', expenseCategory: 'Entertainment', color: '#E67E22', desc: 'PVR, INOX, BookMyShow',        group: 'Entertainment' },
+  { id: 'concert',     label: 'Concert / Event', icon: '🎤', expenseCategory: 'Entertainment', color: '#E67E22', desc: 'Shows, festivals, sports',     group: 'Entertainment' },
+  { id: 'ott',         label: 'OTT / Streaming', icon: '📺', expenseCategory: 'Subscriptions', color: '#16A085', desc: 'Netflix, Prime, Hotstar',      group: 'Entertainment' },
+  { id: 'gaming',      label: 'Gaming',          icon: '🎮', expenseCategory: 'Entertainment', color: '#E67E22', desc: 'Game purchases, recharge',     group: 'Entertainment' },
+
+  // Transport
+  { id: 'petrol',      label: 'Petrol',          icon: '⛽', expenseCategory: 'Petrol',        color: '#D35400', desc: 'Fuel station',                 group: 'Transport' },
+  { id: 'cab',         label: 'Cab / Auto',      icon: '🚕', expenseCategory: 'Transport',     color: '#3498DB', desc: 'Ola, Uber, auto',              group: 'Transport' },
+  { id: 'metro',       label: 'Metro / Bus',     icon: '🚇', expenseCategory: 'Transport',     color: '#3498DB', desc: 'Metro recharge, bus pass',     group: 'Transport' },
+  { id: 'flight',      label: 'Flight / Train',  icon: '✈️', expenseCategory: 'Travel',        color: '#1ABC9C', desc: 'IRCTC, airline booking',       group: 'Transport' },
+
+  // Health
+  { id: 'medicine',    label: 'Medicine',        icon: '💊', expenseCategory: 'Health',        color: '#2ECC71', desc: 'Pharmacy, online meds',        group: 'Health' },
+  { id: 'doctor',      label: 'Doctor',          icon: '🏥', expenseCategory: 'Health',        color: '#2ECC71', desc: 'Consultation, lab tests',      group: 'Health' },
+  { id: 'gym',         label: 'Gym / Fitness',   icon: '🏋️', expenseCategory: 'Fitness',       color: '#E74C3C', desc: 'Gym fees, yoga class',         group: 'Health' },
+
+  // Education
+  { id: 'tuition',     label: 'Tuition / Fees',  icon: '📚', expenseCategory: 'Education',     color: '#2980B9', desc: 'School, college, coaching',    group: 'Education' },
+  { id: 'course',      label: 'Online Course',   icon: '💻', expenseCategory: 'Education',     color: '#2980B9', desc: 'Udemy, Coursera, Skillshare',  group: 'Education' },
+
+  // Shopping
+  { id: 'shopping',    label: 'Shopping',        icon: '🛍️', expenseCategory: 'Shopping',      color: '#9B59B6', desc: 'Clothes, shoes, Amazon',       group: 'Shopping' },
+  { id: 'salon',       label: 'Salon / Spa',     icon: '💈', expenseCategory: 'Shopping',      color: '#9B59B6', desc: 'Haircut, grooming',            group: 'Shopping' },
+
+  // Others
+  { id: 'recharge',    label: 'Mobile Recharge', icon: '📲', expenseCategory: 'Bills',         color: '#F39C12', desc: 'Jio, Airtel, Vi recharge',     group: 'Others' },
+  { id: 'donation',    label: 'Donation',        icon: '🤲', expenseCategory: 'Other',         color: '#7F8C8D', desc: 'Temple, charity, NGO',         group: 'Others' },
+  { id: 'other',       label: 'Other',           icon: '📦', expenseCategory: 'Other',         color: '#7F8C8D', desc: 'Anything else',                group: 'Others' },
+];
+Display the grid like this:
+
+Group cards under their section label (Food & Drinks, Housing & Utilities etc.)
+Each group label: small uppercase grey text with a divider line
+On mobile: each group is a horizontally scrollable row of cards
+On desktop: each group shows as a 4 column grid
+Each card:
+
+Large emoji centered (28px)
+Label bold below (13px)
+Small desc text (11px muted)
+Thin colored top border using category color
+On tap: scale animation (0.95 → 1.05) then opens payment bottom sheet
+If this category has a saved payee → show a small green dot badge on card top right
+
+
+
+
+3. Recent Payments strip:
+
+Horizontal scrollable row of last 5 UPI payments made from Pay section
+Each chip: emoji + payee name + amount + date
+Tapping a chip reopens that payment flow with details pre-filled
+
+4. Saved Payees section:
+
+List of saved UPI contacts from upi_contacts table
+Each row: avatar initials circle + name + UPI ID + last paid amount
+Tap any saved payee → opens payment flow with their details pre-filled
+"Add New Payee" button at the end
+
+
+Payment Flow — 3 Steps:
+Step 1 — Payee Details bottom sheet:
+When user taps any category card open a bottom sheet with:
+[Large emoji + Category label as header]
+
+Payee Name  [text input — optional]
+UPI ID      [text input — e.g. name@okaxis]
+            [saved payees for this category shown as quick-select chips above]
+
+□ Save this payee for next time
+
+[🟢 GPay]  [🟣 PhonePe]  [🔵 Paytm]  [🟠 BHIM]  [💳 Any UPI]
+
+NO amount field here at all
+NO note field here
+Just payee + which UPI app to open
+If UPI ID is blank still allow proceeding — opens UPI app without pre-selected payee
+
+Step 2 — Open UPI App immediately:
+javascriptconst UPI_SCHEMES = {
+  gpay:    (upiId, name) => upiId
+    ? `tez://upi/pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`
+    : `tez://upi/pay?cu=INR`,
+
+  phonepe: (upiId, name) => upiId
+    ? `phonepe://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`
+    : `phonepe://pay?cu=INR`,
+
+  paytm:   (upiId, name) => upiId
+    ? `paytmmp://upi/pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`
+    : `paytmmp://upi/pay?cu=INR`,
+
+  bhim:    (upiId, name) => upiId
+    ? `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`
+    : `upi://pay?cu=INR`,
+
+  any:     (upiId, name) => upiId
+    ? `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&cu=INR`
+    : `upi://pay?cu=INR`,
+};
+
+// Fire immediately on button tap — NO amount passed
+window.location.href = UPI_SCHEMES[selectedApp](upiId, payeeName);
+
+Amount is NEVER passed in the UPI link
+User opens their UPI app, picks payee themselves, enters amount themselves, pays
+After 1.5 seconds automatically show Step 3 screen
+
+Step 3 — Come back and log the payment:
+Bottom sheet automatically changes to:
+💸 Payment done?
+
+How much did you pay?
+
+     ₹  [_________]
+     (large centered number input)
+
+Note (optional): [___________]
+
+[✅ Yes, Log Payment]    [❌ No, Cancel]
+
+Large ₹ input centered — easy to type on mobile
+Keyboard auto-opens on the amount field
+Note auto-filled with category label if left empty
+
+On "Yes, Log Payment":
+javascript// Auto-log to Supabase expenses table
+{
+  user_id: currentUser.id,
+  amount: enteredAmount,
+  category: PAY_CATEGORIES.find(c => c.id === selectedId).expenseCategory,
+  merchant: payeeName || PAY_CATEGORIES.find(c => c.id === selectedId).label,
+  date: new Date().toISOString().split('T')[0],
+  payment_method: 'upi',
+  paid_via: selectedApp,
+  note: note || selectedCategory.label
+}
+
+If payee was saved → update last_paid_amount and last_paid_at in upi_contacts
+If this matches a bill reminder → ask "Mark this bill as paid too?" with Yes/No
+Dashboard updates instantly — total spent, category budget ring, recent expenses
+
+Show success screen:
+✅
+₹[amount] logged!
+[emoji] [Category name]
+Budget remaining: ₹[remaining]
+Auto dismiss after 1.5 seconds → back to Pay page
+On "No, Cancel":
+
+Close sheet silently
+Toast: "Nothing was recorded"
+
+
+Desktop fallback:
+javascriptconst isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+If desktop:
+
+Show: "📱 UPI Pay works on mobile. Scan below to open on your phone"
+Show QR of UPI ID (no amount):
+https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=[upiId]&cu=INR
+
+Step 3 amount input still shows on desktop so they can log manually
+
+
+Supabase SQL — run this first before testing:
+sqlalter table expenses
+  add column if not exists payment_method text default 'manual',
+  add column if not exists paid_via text,
+  add column if not exists note text;
+
+alter table bill_reminders
+  add column if not exists upi_id text,
+  add column if not exists payee_name text;
+
+create table if not exists upi_contacts (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users,
+  name text,
+  upi_id text,
+  category text,
+  last_paid_amount numeric,
+  last_paid_at timestamp,
+  created_at timestamp default now()
+);
+
+Style:
+
+Entire Pay page matches maroon and gold theme
+Category group labels: small uppercase muted text
+Cards: white/dark surface, colored top border, emoji large, smooth tap animation
+Bottom sheet: slides up smoothly, drag handle at top, blurred backdrop
+Success screen: big green checkmark draw animation
+All transitions 0.3s ease
+Optimized for mobile — this is a mobile-first feature
+On mobile bottom nav: Pay icon shows a badge if any bill reminders are due today
+
+
+⚠️ Final Rules:
+
+Run the SQL in Supabase first before pasting this prompt
+Do NOT pre-fill any amount in UPI links — user enters it themselves in their UPI app
+Do NOT change any existing page, feature or Supabase table
+Keep maroon and gold theme throughout
+All expense auto-categorization must come from PAY_CATEGORIES config only
+Dashboard must reflect every logged payment instantly without page refresh

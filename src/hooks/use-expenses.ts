@@ -20,6 +20,9 @@ export interface Expense {
   isRecurring?: boolean;
   frequency?: 'Daily' | 'Weekly' | 'Monthly';
   receiptImage?: string;
+  paymentMethod?: string;
+  paidVia?: string;
+  note?: string;
 }
 
 export interface RecurringTemplate {
@@ -61,6 +64,9 @@ export function useExpenses(userId?: string) {
         isRecurring: r.is_recurring,
         frequency: r.frequency,
         receiptImage: r.receipt_image,
+        paymentMethod: r.payment_method,
+        paidVia: r.paid_via,
+        note: r.note,
       }));
 
       const templates: RecurringTemplate[] = (recData || []).map((r) => ({
@@ -130,7 +136,7 @@ export function useExpenses(userId?: string) {
   const addExpense = async (expense: Omit<Expense, 'id'>) => {
     if (!userId) return;
     const id = crypto.randomUUID();
-    const row = {
+    const row: Record<string, unknown> = {
       id,
       user_id: userId,
       name: expense.name,
@@ -141,6 +147,9 @@ export function useExpenses(userId?: string) {
       frequency: expense.frequency || null,
       receipt_image: expense.receiptImage || null,
     };
+    if (expense.paymentMethod) row.payment_method = expense.paymentMethod;
+    if (expense.paidVia) row.paid_via = expense.paidVia;
+    if (expense.note) row.note = expense.note;
     await supabase.from('expenses').insert(row);
     const newExpense: Expense = { ...expense, id };
     setExpenses(prev => [newExpense, ...prev]);

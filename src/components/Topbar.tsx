@@ -15,6 +15,7 @@ export function Topbar({ currentView, onAddExpense, isDark, onToggleDark, userNa
   const titleMap: Record<ViewState, string> = {
     'dashboard': 'Dashboard',
     'expenses': 'All Expenses',
+    'pay': '⚡ Pay',
     'ai-analysis': 'AI Insights',
     'how-it-works': 'How It Works',
     'settings': 'Settings',
@@ -42,8 +43,8 @@ export function Topbar({ currentView, onAddExpense, isDark, onToggleDark, userNa
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        {/* Add Expense (not shown on settings) */}
-        {currentView !== 'settings' && (
+        {/* Add Expense (not shown on settings or pay) */}
+        {currentView !== 'settings' && currentView !== 'pay' && (
           <button
             onClick={onAddExpense}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-200"

@@ -1,8 +1,8 @@
 import React from 'react';
 import { clsx } from 'clsx';
-import { LayoutDashboard, Receipt, Sparkles, Info, Wallet, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Receipt, Sparkles, Info, Wallet, Settings, LogOut, Sun, Moon, Zap } from 'lucide-react';
 
-export type ViewState = 'dashboard' | 'expenses' | 'ai-analysis' | 'how-it-works' | 'settings';
+export type ViewState = 'dashboard' | 'expenses' | 'pay' | 'ai-analysis' | 'how-it-works' | 'settings';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -17,6 +17,7 @@ export function Sidebar({ currentView, onNavigate, onLogout, isDark, onToggleDar
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
+    { id: 'pay', label: 'Pay', icon: Zap },
     { id: 'ai-analysis', label: 'AI Analysis', icon: Sparkles },
     { id: 'how-it-works', label: 'How It Works', icon: Info },
     { id: 'settings', label: 'Settings', icon: Settings },
@@ -95,6 +96,7 @@ export function MobileNav({ currentView, onNavigate }: MobileNavProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dash', icon: LayoutDashboard },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
+    { id: 'pay', label: 'Pay', icon: Zap },
     { id: 'ai-analysis', label: 'AI', icon: Sparkles },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;

@@ -9,6 +9,7 @@ import { ExpenseModal } from "./components/ExpenseModal";
 import { AIAnalysis } from "./components/AIAnalysis";
 import { HowItWorks } from "./components/HowItWorks";
 import { Settings } from "./components/Settings";
+import { Pay } from "./components/Pay";
 import { Auth } from "./components/Auth";
 import { ChatBot } from "./components/ChatBot";
 import { useExpenses } from "./hooks/use-expenses";
@@ -141,6 +142,18 @@ export default function App() {
           )}
           {currentView === 'how-it-works' && (
             <HowItWorks />
+          )}
+          {currentView === 'pay' && (
+            <Pay
+              userId={user.id}
+              expenses={expenses}
+              budgets={budgets}
+              thisMonthByCategory={thisMonthByCategory}
+              currencySymbol={currencyInfo.symbol}
+              formatAmount={formatAmount}
+              onAddExpense={(data) => addExpense(data)}
+              onNavigateDashboard={() => setCurrentView('dashboard')}
+            />
           )}
           {currentView === 'settings' && (
             <Settings
