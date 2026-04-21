@@ -58,7 +58,9 @@ interface ScanResult {
 }
 
 async function scanReceiptWithGemini(imageFile: File): Promise<ScanResult> {
-  const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+  const key =
+    (import.meta.env.VITE_GEMINI_SCANNER_KEY as string | undefined) ||
+    (import.meta.env.VITE_GEMINI_API_KEY as string | undefined);
   if (!key) throw new Error('No API key');
 
   const base64Data = await new Promise<string>((resolve, reject) => {
